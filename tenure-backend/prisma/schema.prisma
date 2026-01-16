@@ -1,15 +1,142 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+////////////////////////////////////////////////////////////
+// ENUMS
+////////////////////////////////////////////////////////////
+
+enum VisibilityStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum SeniorityLevel {
+  JUNIOR
+  MID
+  SENIOR
+  STAFF
+  PRINCIPAL
+}
+
+enum ActivityType {
+  PROFILE_UPDATED
+  ROLE_PREFERENCE_UPDATED
+  MATCH_ADDED
+  PROMPT_GENERATED
+}
+
+////////////////////////////////////////////////////////////
+// USER (Auth-linked)
+////////////////////////////////////////////////////////////
+
+model User {
+  id             String   @id @default(uuid())
+  authUserId     String   @unique
+  email          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  profile        Profile?
+  rolePreferences RolePreference[]
+  pipelineMemberships PipelineMembership[]
+  interviewPrompts InterviewPrompt[]
+  activityLogs   ActivityLog[]
+}
+
+////////////////////////////////////////////////////////////
+// PROFILE (Career identity)
+////////////////////////////////////////////////////////////
+
+model Profile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  headline       String?
+  summary        String?
+  currentRole    String?
+  seniority      SeniorityLevel?
+  location       String?
+  yearsExperience Int?
+  visibility     VisibilityStatus @default(ACTIVE)
+  updatedAt      DateTime @updatedAt
+
+  user           User @relation(fields: [userId], references: [id])
+}
+
+////////////////////////////////////////////////////////////
+// ROLE PREFERENCES (What user wants)
+////////////////////////////////////////////////////////////
+
+model RolePreference {
+  id             String   @id @default(uuid())
+  userId         String
+  title          String
+  location       String?
+  remoteAllowed  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  user           User @relation(fields: [userId], references: [id])
+}
+
+////////////////////////////////////////////////////////////
+// HIRING POOLS (Abstract opportunity groups)
+////////////////////////////////////////////////////////////
+
+model HiringPool {
+  id             String   @id @default(uuid())
+  roleTitle      String
+  companyName    String?
+  location       String?
+  createdAt      DateTime @default(now())
+
+  memberships    PipelineMembership[]
+}
+
+////////////////////////////////////////////////////////////
+// PIPELINE MEMBERSHIP (User ↔ HiringPool)
+////////////////////////////////////////////////////////////
+
+model PipelineMembership {
+  id             String   @id @default(uuid())
+  userId         String
+  hiringPoolId   String
+  addedAt        DateTime @default(now())
+
+  user           User       @relation(fields: [userId], references: [id])
+  hiringPool     HiringPool @relation(fields: [hiringPoolId], references: [id])
+
+  @@unique([userId, hiringPoolId])
+}
+
+////////////////////////////////////////////////////////////
+// INTERVIEW PROMPTS (AI-generated)
+////////////////////////////////////////////////////////////
+
+model InterviewPrompt {
+  id             String   @id @default(uuid())
+  userId         String
+  roleTitle      String
+  prompt         String
+  createdAt      DateTime @default(now())
+
+  user           User @relation(fields: [userId], references: [id])
+}
+
+////////////////////////////////////////////////////////////
+// ACTIVITY LOG (Audit + future analytics)
+////////////////////////////////////////////////////////////
+
+model ActivityLog {
+  id             String   @id @default(uuid())
+  userId         String
+  type           ActivityType
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  user           User @relation(fields: [userId], references: [id])
 }
