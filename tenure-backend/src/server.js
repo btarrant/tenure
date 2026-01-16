@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { provisionUser } from "./services/provisionUser.js";
+import { requireAuth } from "./middleware/auth.js";
 
 const app = express();
 app.use(cors());
@@ -31,3 +32,10 @@ app.post("/auth/provision", async (req, res) => {
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`Tenure backend listening on :${port}`));
+
+app.get("/me", requireAuth, (req, res) => {
+  res.json({
+    id: req.user.id,
+    email: req.user.email,
+  });
+});
