@@ -6,6 +6,7 @@ import { provisionUser } from "./services/provisionUser.js";
 import { requireAuth } from "./middleware/auth.js";
 import { ensureDefaultTrack } from "./services/ensureDefaultTrack.js";
 import { prisma } from "./lib/prisma.js";
+import careerTracksRouter from "./routes/careerTracks.js";
 
 const app = express();
 app.use(cors());
@@ -54,3 +55,5 @@ app.get("/me", requireAuth, async (req, res) => {
     defaultTrack: track,
   });
 });
+
+app.use("/career-tracks", careerTracksRouter);
