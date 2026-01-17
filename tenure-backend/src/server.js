@@ -7,6 +7,7 @@ import { requireAuth } from "./middleware/auth.js";
 import { ensureDefaultTrack } from "./services/ensureDefaultTrack.js";
 import { prisma } from "./lib/prisma.js";
 import careerTracksRouter from "./routes/careerTracks.js";
+import activityRouter from "./routes/activity.js";
 
 const app = express();
 app.use(cors());
@@ -57,3 +58,4 @@ app.get("/me", requireAuth, async (req, res) => {
 });
 
 app.use("/career-tracks", careerTracksRouter);
+app.use("/activity", activityRouter);

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { logActivity } from "./activityService.js";
 
 export async function listCareerTracks(userId) {
   return prisma.careerTrack.findMany({
@@ -8,7 +9,7 @@ export async function listCareerTracks(userId) {
 }
 
 export async function createCareerTrack(userId, data) {
-  return prisma.careerTrack.create({
+  const track = await prisma.careerTrack.create({
     data: {
       userId,
       title: data.title,
@@ -18,6 +19,17 @@ export async function createCareerTrack(userId, data) {
       visibility: data.visibility ?? "QUIET",
     },
   });
+
+  await logActivity({
+    userId,
+    type: "TRACK_CREATED",
+    metadata: {
+      trackId: track.id,
+      title: track.title,
+    },
+  });
+
+  return track;
 }
 
 export async function updateCareerTrack(userId, trackId, data) {
@@ -29,12 +41,35 @@ export async function updateCareerTrack(userId, trackId, data) {
     throw new Error("Career track not found");
   }
 
-  return prisma.careerTrack.update({
+  const updated = await prisma.careerTrack.update({
     where: { id: trackId },
     data,
   });
+
+  await logActivity({
+    userId,
+    type: "TRACK_UPDATED",
+    metadata: {
+      trackId,
+      updatedFields: Object.keys(data),
+    },
+  });
+
+  return updated;
 }
 
 export async function updateTrackVisibility(userId, trackId, visibility) {
-  return updateCareerTrack(userId, trackId, { visibility });
+  const updated = await updateCareerTrack(userId, trackId, { visibility });
+
+  await logActivity({
+    userId,
+    type: "VISIBILITY_CHANGED",
+    metadata: {
+      trackId,
+      visibility,
+    },
+  });
+
+  return updated;
 }
+
