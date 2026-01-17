@@ -4,6 +4,8 @@ import cors from "cors";
 import { supabaseAdmin } from "./lib/supabaseAdmin.js";
 import { provisionUser } from "./services/provisionUser.js";
 import { requireAuth } from "./middleware/auth.js";
+import { ensureDefaultTrack } from "./services/ensureDefaultTrack.js";
+import { prisma } from "./lib/prisma.js";
 
 const app = express();
 app.use(cors());
@@ -33,9 +35,22 @@ app.post("/auth/provision", async (req, res) => {
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`Tenure backend listening on :${port}`));
 
-app.get("/me", requireAuth, (req, res) => {
+app.get("/me", requireAuth, async (req, res) => {
+  const authUserId = req.user.id;
+  const email = req.user.email;
+
+  // Ensure Prisma User exists
+  const user = await prisma.user.upsert({
+    where: { authUserId },
+    update: {},
+    create: { authUserId, email },
+  });
+
+  // Ensure default career track exists
+  const track = await ensureDefaultTrack(user.id);
+
   res.json({
-    id: req.user.id,
-    email: req.user.email,
+    user,
+    defaultTrack: track,
   });
 });

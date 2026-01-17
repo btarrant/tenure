@@ -56,7 +56,7 @@ model User {
 model CareerTrack {
   id               String   @id @default(uuid())
   userId           String
-  title            String        // e.g. "Product Manager", "Founder"
+  title            String
   seniority        SeniorityLevel?
   location         String?
   yearsExperience  Int?
@@ -68,6 +68,8 @@ model CareerTrack {
   rolePreferences  RolePreference[]
   pipelineLinks    PipelineMembership[]
   interviewPrompts InterviewPrompt[]
+
+  @@map("career_track")
 }
 
 ////////////////////////////////////////////////////////////
